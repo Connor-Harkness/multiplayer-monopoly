@@ -135,6 +135,11 @@ class MultiplayerMonopolyGame {
             }
         });
 
+        // Dev menu button
+        document.getElementById('dev-menu').addEventListener('click', () => {
+            this.showDevMenu();
+        });
+
         // Modal close handlers
         document.querySelectorAll('.close').forEach(closeBtn => {
             closeBtn.addEventListener('click', () => {
@@ -296,6 +301,7 @@ class MultiplayerMonopolyGame {
         const endTurnButton = document.getElementById('end-turn');
         const buyPropertyButton = document.getElementById('buy-property');
         const payRentButton = document.getElementById('pay-rent');
+        const devButton = document.getElementById('dev-menu');
         
         const isMyTurn = this.isMyTurn();
         
@@ -303,6 +309,13 @@ class MultiplayerMonopolyGame {
         endTurnButton.disabled = !isMyTurn || !this.diceRolled;
         buyPropertyButton.disabled = true;
         payRentButton.disabled = true;
+        
+        // Show dev menu button only for host during game
+        if (this.gameStarted && this.isHost) {
+            devButton.style.display = 'inline-block';
+        } else {
+            devButton.style.display = 'none';
+        }
         
         if (isMyTurn && this.diceRolled) {
             const currentPlayer = this.players.find(p => p.id === this.playerId);
@@ -350,6 +363,100 @@ class MultiplayerMonopolyGame {
 
     closeModal() {
         document.getElementById('game-modal').classList.remove('active');
+    }
+
+    showDevMenu() {
+        this.populateDevMenuOptions();
+        document.getElementById('dev-modal').classList.add('active');
+    }
+
+    closeDevModal() {
+        document.getElementById('dev-modal').classList.remove('active');
+    }
+
+    populateDevMenuOptions() {
+        // Populate player selects
+        const playerSelects = ['money-player', 'property-player', 'position-player'];
+        playerSelects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '';
+            this.players.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.id;
+                option.textContent = player.name;
+                select.appendChild(option);
+            });
+        });
+
+        // Populate property select
+        const propertySelect = document.getElementById('property-select');
+        propertySelect.innerHTML = '';
+        this.boardSpaces.forEach((space, index) => {
+            if (space.type === 'property' || space.type === 'railroad' || space.type === 'utility') {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = space.name;
+                propertySelect.appendChild(option);
+            }
+        });
+
+        // Populate position select
+        const positionSelect = document.getElementById('position-select');
+        positionSelect.innerHTML = '';
+        this.boardSpaces.forEach((space, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${index}: ${space.name}`;
+            positionSelect.appendChild(option);
+        });
+    }
+
+    devGiveMoney() {
+        const playerId = document.getElementById('money-player').value;
+        const amount = parseInt(document.getElementById('money-amount').value);
+        
+        if (amount > 0) {
+            this.socket.emit('devAction', {
+                type: 'giveMoney',
+                targetPlayerId: playerId,
+                amount: amount
+            });
+        }
+    }
+
+    devTakeMoney() {
+        const playerId = document.getElementById('money-player').value;
+        const amount = parseInt(document.getElementById('money-amount').value);
+        
+        if (amount > 0) {
+            this.socket.emit('devAction', {
+                type: 'takeMoney',
+                targetPlayerId: playerId,
+                amount: amount
+            });
+        }
+    }
+
+    devGiveProperty() {
+        const playerId = document.getElementById('property-player').value;
+        const propertyId = parseInt(document.getElementById('property-select').value);
+        
+        this.socket.emit('devAction', {
+            type: 'giveProperty',
+            targetPlayerId: playerId,
+            propertyId: propertyId
+        });
+    }
+
+    devMovePlayer() {
+        const playerId = document.getElementById('position-player').value;
+        const position = parseInt(document.getElementById('position-select').value);
+        
+        this.socket.emit('devAction', {
+            type: 'movePlayer',
+            targetPlayerId: playerId,
+            position: position
+        });
     }
 }
 

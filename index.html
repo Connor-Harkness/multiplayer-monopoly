@@ -236,6 +236,7 @@
                     <button id="end-turn" disabled>End Turn</button>
                     <button id="buy-property" disabled>Buy Property</button>
                     <button id="pay-rent" disabled>Pay Rent</button>
+                    <button id="dev-menu" style="display: none;">Dev Menu</button>
                 </div>
             </div>
         </main>
@@ -245,6 +246,67 @@
                 <span class="close">&times;</span>
                 <div id="modal-body">
                     <!-- Modal content will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Dev Menu Modal -->
+        <div id="dev-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="dev-modal-body">
+                    <h3>Dev/Cheat Menu</h3>
+                    <p style="color: #d32f2f; font-size: 0.9em; margin-bottom: 20px;">
+                        ⚠️ Host only - Use responsibly for testing purposes
+                    </p>
+                    
+                    <div class="dev-section">
+                        <h4>Money Actions</h4>
+                        <div class="dev-action">
+                            <label for="money-player">Player:</label>
+                            <select id="money-player">
+                                <!-- Players will be populated here -->
+                            </select>
+                            <label for="money-amount">Amount:</label>
+                            <input type="number" id="money-amount" min="1" max="50000" value="500">
+                            <button onclick="game.devGiveMoney()">Give Money</button>
+                            <button onclick="game.devTakeMoney()">Take Money</button>
+                        </div>
+                    </div>
+                    
+                    <div class="dev-section">
+                        <h4>Property Actions</h4>
+                        <div class="dev-action">
+                            <label for="property-player">Player:</label>
+                            <select id="property-player">
+                                <!-- Players will be populated here -->
+                            </select>
+                            <label for="property-select">Property:</label>
+                            <select id="property-select">
+                                <!-- Properties will be populated here -->
+                            </select>
+                            <button onclick="game.devGiveProperty()">Give Property</button>
+                        </div>
+                    </div>
+                    
+                    <div class="dev-section">
+                        <h4>Position Actions</h4>
+                        <div class="dev-action">
+                            <label for="position-player">Player:</label>
+                            <select id="position-player">
+                                <!-- Players will be populated here -->
+                            </select>
+                            <label for="position-select">Position:</label>
+                            <select id="position-select">
+                                <!-- Board positions will be populated here -->
+                            </select>
+                            <button onclick="game.devMovePlayer()">Move Player</button>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="game.closeDevModal()" class="action-button">Close</button>
+                    </div>
                 </div>
             </div>
         </div>

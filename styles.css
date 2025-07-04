@@ -666,3 +666,91 @@ button:focus, input:focus {
     outline: 2px solid #4a7c59;
     outline-offset: -2px;
 }
+
+/* Dev Menu Styles */
+#dev-menu {
+    background: #d32f2f;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.3s ease;
+}
+
+#dev-menu:hover {
+    background: #b71c1c;
+}
+
+.dev-section {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+.dev-section h4 {
+    margin: 0 0 15px 0;
+    color: #2d4a32;
+    font-size: 1.1rem;
+}
+
+.dev-action {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.dev-action label {
+    font-weight: bold;
+    color: #4a7c59;
+    white-space: nowrap;
+}
+
+.dev-action select,
+.dev-action input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.dev-action button {
+    background: #4a7c59;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+}
+
+.dev-action button:hover {
+    background: #3a6b49;
+}
+
+.dev-action button:nth-child(6) {
+    background: #d32f2f;
+}
+
+.dev-action button:nth-child(6):hover {
+    background: #b71c1c;
+}
+
+@media (max-width: 768px) {
+    .dev-action {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .dev-action label {
+        font-size: 0.9rem;
+    }
+}
