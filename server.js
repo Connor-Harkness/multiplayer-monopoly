@@ -271,6 +271,47 @@ io.on('connection', (socket) => {
         });
     });
 
+    // Handle dev/cheat actions (host only)
+    socket.on('devAction', (data) => {
+        const connection = playerConnections.get(socket.id);
+        if (!connection) return;
+        
+        const room = gameRooms.get(connection.roomId);
+        if (!room || !room.gameStarted) return;
+        
+        // Verify this is the host
+        const player = room.getPlayer(connection.playerId);
+        if (!player || player.name !== room.hostName) {
+            socket.emit('error', { message: 'Only the host can use dev actions' });
+            return;
+        }
+        
+        // Process the dev action based on type
+        switch (data.type) {
+            case 'giveMoney':
+                handleGiveMoney(room, data.targetPlayerId, data.amount);
+                break;
+            case 'takeMoney':
+                handleTakeMoney(room, data.targetPlayerId, data.amount);
+                break;
+            case 'giveProperty':
+                handleGiveProperty(room, data.targetPlayerId, data.propertyId);
+                break;
+            case 'movePlayer':
+                handleMovePlayer(room, data.targetPlayerId, data.position);
+                break;
+        }
+        
+        // Broadcast updated game state to all players
+        io.to(connection.roomId).emit('gameStateUpdate', {
+            room: {
+                players: room.players,
+                gameState: room.gameState,
+                currentPlayerIndex: room.currentPlayerIndex
+            }
+        });
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
         const connection = playerConnections.get(socket.id);
@@ -322,6 +363,49 @@ function handleBuyProperty(room, playerId, spaceId) {
 function handleEndTurn(room) {
     room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
     room.gameState.diceRolled = false;
+}
+
+// Dev/Cheat action handlers
+function handleGiveMoney(room, targetPlayerId, amount) {
+    const targetPlayer = room.getPlayer(targetPlayerId);
+    if (targetPlayer && amount > 0) {
+        targetPlayer.money += amount;
+    }
+}
+
+function handleTakeMoney(room, targetPlayerId, amount) {
+    const targetPlayer = room.getPlayer(targetPlayerId);
+    if (targetPlayer && amount > 0) {
+        targetPlayer.money = Math.max(0, targetPlayer.money - amount);
+    }
+}
+
+function handleGiveProperty(room, targetPlayerId, propertyId) {
+    const targetPlayer = room.getPlayer(targetPlayerId);
+    const property = room.gameState.boardSpaces[propertyId];
+    
+    if (targetPlayer && property && property.type === 'property') {
+        // Remove property from current owner if any
+        if (property.owner) {
+            const currentOwner = room.getPlayer(property.owner);
+            if (currentOwner) {
+                currentOwner.properties = currentOwner.properties.filter(p => p !== propertyId);
+            }
+        }
+        
+        // Give property to target player
+        property.owner = targetPlayerId;
+        if (!targetPlayer.properties.includes(propertyId)) {
+            targetPlayer.properties.push(propertyId);
+        }
+    }
+}
+
+function handleMovePlayer(room, targetPlayerId, position) {
+    const targetPlayer = room.getPlayer(targetPlayerId);
+    if (targetPlayer && position >= 0 && position < 40) {
+        targetPlayer.position = position;
+    }
 }
 
 const PORT = process.env.PORT || 3000;
