@@ -341,6 +341,11 @@ class MultiplayerMonopolyGame {
         `;
         
         modal.classList.add('active');
+        
+        // Auto-close notification after 3 seconds
+        setTimeout(() => {
+            modal.classList.remove('active');
+        }, 3000);
     }
 
     closeModal() {
