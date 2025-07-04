@@ -1,148 +1,263 @@
-// Monopoly Game Logic
-class MonopolyGame {
+// Multiplayer Monopoly Game Logic
+class MultiplayerMonopolyGame {
     constructor() {
+        this.socket = null;
+        this.playerId = null;
+        this.roomId = null;
+        this.isHost = false;
         this.players = [];
         this.currentPlayerIndex = 0;
         this.gameStarted = false;
-        this.boardSpaces = this.initializeBoardSpaces();
+        this.boardSpaces = [];
         this.lastDiceRoll = [0, 0];
         this.diceRolled = false;
         
+        this.initializeConnection();
         this.initializeEventListeners();
-        this.initializeSetup();
     }
 
-    initializeBoardSpaces() {
-        return [
-            { name: "GO", type: "corner", price: 0, owner: null, rent: 0 },
-            { name: "Mediterranean Ave", type: "property", price: 60, owner: null, rent: 2, colorGroup: "brown" },
-            { name: "Community Chest", type: "chance", price: 0, owner: null, rent: 0 },
-            { name: "Baltic Ave", type: "property", price: 60, owner: null, rent: 4, colorGroup: "brown" },
-            { name: "Income Tax", type: "tax", price: 200, owner: null, rent: 0 },
-            { name: "Reading Railroad", type: "railroad", price: 200, owner: null, rent: 25 },
-            { name: "Oriental Ave", type: "property", price: 100, owner: null, rent: 6, colorGroup: "light-blue" },
-            { name: "Chance", type: "chance", price: 0, owner: null, rent: 0 },
-            { name: "Vermont Ave", type: "property", price: 100, owner: null, rent: 6, colorGroup: "light-blue" },
-            { name: "Connecticut Ave", type: "property", price: 120, owner: null, rent: 8, colorGroup: "light-blue" },
-            { name: "Jail", type: "corner", price: 0, owner: null, rent: 0 },
-            { name: "St. Charles Place", type: "property", price: 140, owner: null, rent: 10, colorGroup: "pink" },
-            { name: "Electric Company", type: "utility", price: 150, owner: null, rent: 0 },
-            { name: "States Ave", type: "property", price: 140, owner: null, rent: 10, colorGroup: "pink" },
-            { name: "Virginia Ave", type: "property", price: 160, owner: null, rent: 12, colorGroup: "pink" },
-            { name: "Pennsylvania Railroad", type: "railroad", price: 200, owner: null, rent: 25 },
-            { name: "St. James Place", type: "property", price: 180, owner: null, rent: 14, colorGroup: "orange" },
-            { name: "Community Chest", type: "chance", price: 0, owner: null, rent: 0 },
-            { name: "Tennessee Ave", type: "property", price: 180, owner: null, rent: 14, colorGroup: "orange" },
-            { name: "New York Ave", type: "property", price: 200, owner: null, rent: 16, colorGroup: "orange" },
-            { name: "Free Parking", type: "corner", price: 0, owner: null, rent: 0 },
-            { name: "Kentucky Ave", type: "property", price: 220, owner: null, rent: 18, colorGroup: "red" },
-            { name: "Chance", type: "chance", price: 0, owner: null, rent: 0 },
-            { name: "Indiana Ave", type: "property", price: 220, owner: null, rent: 18, colorGroup: "red" },
-            { name: "Illinois Ave", type: "property", price: 240, owner: null, rent: 20, colorGroup: "red" },
-            { name: "B. & O. Railroad", type: "railroad", price: 200, owner: null, rent: 25 },
-            { name: "Atlantic Ave", type: "property", price: 260, owner: null, rent: 22, colorGroup: "yellow" },
-            { name: "Ventnor Ave", type: "property", price: 260, owner: null, rent: 22, colorGroup: "yellow" },
-            { name: "Water Works", type: "utility", price: 150, owner: null, rent: 0 },
-            { name: "Marvin Gardens", type: "property", price: 280, owner: null, rent: 24, colorGroup: "yellow" },
-            { name: "Go To Jail", type: "corner", price: 0, owner: null, rent: 0 },
-            { name: "Pacific Ave", type: "property", price: 300, owner: null, rent: 26, colorGroup: "green" },
-            { name: "North Carolina Ave", type: "property", price: 300, owner: null, rent: 26, colorGroup: "green" },
-            { name: "Community Chest", type: "chance", price: 0, owner: null, rent: 0 },
-            { name: "Pennsylvania Ave", type: "property", price: 320, owner: null, rent: 28, colorGroup: "green" },
-            { name: "Short Line", type: "railroad", price: 200, owner: null, rent: 25 },
-            { name: "Chance", type: "chance", price: 0, owner: null, rent: 0 },
-            { name: "Park Place", type: "property", price: 350, owner: null, rent: 35, colorGroup: "blue" },
-            { name: "Luxury Tax", type: "tax", price: 100, owner: null, rent: 0 },
-            { name: "Boardwalk", type: "property", price: 400, owner: null, rent: 50, colorGroup: "blue" }
-        ];
+    initializeConnection() {
+        this.socket = io();
+        
+        this.socket.on('connect', () => {
+            console.log('Connected to server');
+            document.getElementById('connection-status').textContent = 'Connected';
+            document.getElementById('connection-status').style.color = 'green';
+        });
+
+        this.socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            document.getElementById('connection-status').textContent = 'Disconnected';
+            document.getElementById('connection-status').style.color = 'red';
+        });
+
+        this.socket.on('gameCreated', (data) => {
+            this.playerId = data.playerId;
+            this.roomId = data.roomId;
+            this.isHost = true;
+            this.players = data.room.players;
+            this.showGameRoom(data.room);
+        });
+
+        this.socket.on('playerJoined', (data) => {
+            this.players = data.room.players;
+            this.updateRoomPlayers();
+            this.showMessage(`${data.playerName} joined the game!`);
+        });
+
+        this.socket.on('gamesList', (games) => {
+            this.displayAvailableGames(games);
+        });
+
+        this.socket.on('gameStarted', (data) => {
+            this.players = data.room.players;
+            this.boardSpaces = data.room.gameState.boardSpaces;
+            this.currentPlayerIndex = data.room.currentPlayerIndex;
+            this.gameStarted = true;
+            this.startGame();
+        });
+
+        this.socket.on('gameStateUpdate', (data) => {
+            this.players = data.room.players;
+            this.boardSpaces = data.room.gameState.boardSpaces;
+            this.currentPlayerIndex = data.room.currentPlayerIndex;
+            this.lastDiceRoll = data.room.gameState.lastDiceRoll;
+            this.diceRolled = data.room.gameState.diceRolled;
+            this.updateGameDisplay();
+        });
+
+        this.socket.on('playerDisconnected', (data) => {
+            this.showMessage(`${data.playerName} disconnected from the game`);
+        });
+
+        this.socket.on('error', (data) => {
+            alert(`Error: ${data.message}`);
+        });
     }
 
     initializeEventListeners() {
-        // Setup modal
-        document.getElementById('num-players').addEventListener('change', this.updatePlayerNameInputs.bind(this));
-        document.getElementById('start-game').addEventListener('click', this.startGame.bind(this));
-        
-        // Game controls
-        document.getElementById('roll-dice').addEventListener('click', this.rollDice.bind(this));
-        document.getElementById('end-turn').addEventListener('click', this.endTurn.bind(this));
-        document.getElementById('buy-property').addEventListener('click', this.buyProperty.bind(this));
-        document.getElementById('pay-rent').addEventListener('click', this.payRent.bind(this));
-        
-        // Modal close
-        document.querySelectorAll('.close').forEach(closeBtn => {
-            closeBtn.addEventListener('click', this.closeModal.bind(this));
+        // Lobby event listeners
+        document.getElementById('create-game-btn').addEventListener('click', () => {
+            const playerName = document.getElementById('player-name-input').value.trim();
+            if (!playerName) {
+                alert('Please enter your name');
+                return;
+            }
+            this.createGame(playerName);
         });
-        
-        // Click outside modal to close
-        window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                this.closeModal();
+
+        document.getElementById('join-game-btn').addEventListener('click', () => {
+            this.showJoinGameSection();
+        });
+
+        document.getElementById('refresh-games-btn').addEventListener('click', () => {
+            this.refreshGamesList();
+        });
+
+        document.getElementById('join-by-code-btn').addEventListener('click', () => {
+            const playerName = document.getElementById('player-name-input').value.trim();
+            const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+            if (!playerName || !roomCode) {
+                alert('Please enter your name and room code');
+                return;
+            }
+            this.joinGame(roomCode, playerName);
+        });
+
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            this.socket.emit('startGame');
+        });
+
+        document.getElementById('leave-room-btn').addEventListener('click', () => {
+            this.leaveRoom();
+        });
+
+        // Game event listeners
+        document.getElementById('roll-dice').addEventListener('click', () => {
+            if (this.isMyTurn()) {
+                this.socket.emit('gameAction', { type: 'rollDice' });
             }
         });
+
+        document.getElementById('end-turn').addEventListener('click', () => {
+            if (this.isMyTurn()) {
+                this.socket.emit('gameAction', { type: 'endTurn' });
+            }
+        });
+
+        document.getElementById('buy-property').addEventListener('click', () => {
+            if (this.isMyTurn()) {
+                const currentPlayer = this.players.find(p => p.id === this.playerId);
+                this.socket.emit('gameAction', { 
+                    type: 'buyProperty', 
+                    spaceId: currentPlayer.position 
+                });
+            }
+        });
+
+        // Modal close handlers
+        document.querySelectorAll('.close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', () => {
+                closeBtn.closest('.modal').classList.remove('active');
+            });
+        });
     }
 
-    initializeSetup() {
-        this.updatePlayerNameInputs();
+    createGame(playerName) {
+        this.socket.emit('createGame', { playerName });
     }
 
-    updatePlayerNameInputs() {
-        const numPlayers = parseInt(document.getElementById('num-players').value);
-        const container = document.getElementById('player-names');
-        
-        container.innerHTML = '';
-        
-        for (let i = 0; i < numPlayers; i++) {
-            const div = document.createElement('div');
-            div.className = 'player-name-input';
-            div.innerHTML = `
-                <label>Player ${i + 1} Name:</label>
-                <input type="text" value="Player ${i + 1}" maxlength="15">
-            `;
-            container.appendChild(div);
+    joinGame(roomId, playerName) {
+        this.socket.emit('joinGame', { roomId, playerName });
+    }
+
+    showJoinGameSection() {
+        document.getElementById('join-game-section').style.display = 'block';
+        this.refreshGamesList();
+    }
+
+    refreshGamesList() {
+        this.socket.emit('listGames');
+    }
+
+    displayAvailableGames(games) {
+        const gamesList = document.getElementById('games-list');
+        gamesList.innerHTML = '';
+
+        if (games.length === 0) {
+            gamesList.innerHTML = '<p>No available games. Create a new one!</p>';
+            return;
         }
+
+        games.forEach(game => {
+            const gameDiv = document.createElement('div');
+            gameDiv.className = 'game-item';
+            gameDiv.innerHTML = `
+                <div class="game-info">
+                    <strong>Room: ${game.id}</strong><br>
+                    Host: ${game.hostName}<br>
+                    Players: ${game.playerCount}/${game.maxPlayers}
+                </div>
+                <button onclick="game.joinGameById('${game.id}')">Join</button>
+            `;
+            gamesList.appendChild(gameDiv);
+        });
+    }
+
+    joinGameById(roomId) {
+        const playerName = document.getElementById('player-name-input').value.trim();
+        if (!playerName) {
+            alert('Please enter your name');
+            return;
+        }
+        this.joinGame(roomId, playerName);
+    }
+
+    showGameRoom(room) {
+        document.getElementById('lobby-options').style.display = 'none';
+        document.getElementById('join-game-section').style.display = 'none';
+        document.getElementById('game-room-section').style.display = 'block';
+        
+        document.getElementById('room-code').textContent = room.id;
+        
+        if (this.isHost) {
+            document.getElementById('start-game-btn').style.display = 'block';
+        }
+        
+        this.updateRoomPlayers();
+    }
+
+    updateRoomPlayers() {
+        const playersDiv = document.getElementById('room-players');
+        playersDiv.innerHTML = '';
+
+        this.players.forEach(player => {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'room-player';
+            playerDiv.innerHTML = `
+                <span class="player-name">${player.name}</span>
+                ${player.id === this.playerId ? '<span class="you-indicator">(You)</span>' : ''}
+                ${!player.connected ? '<span class="disconnected-indicator">(Disconnected)</span>' : ''}
+            `;
+            playersDiv.appendChild(playerDiv);
+        });
+    }
+
+    leaveRoom() {
+        this.socket.disconnect();
+        location.reload();
     }
 
     startGame() {
-        const numPlayers = parseInt(document.getElementById('num-players').value);
-        const nameInputs = document.querySelectorAll('#player-names input');
+        document.getElementById('lobby-modal').classList.remove('active');
+        document.getElementById('current-player').style.display = 'block';
         
-        this.players = [];
-        
-        for (let i = 0; i < numPlayers; i++) {
-            this.players.push({
-                id: i,
-                name: nameInputs[i].value || `Player ${i + 1}`,
-                money: 1500,
-                position: 0,
-                properties: [],
-                inJail: false,
-                jailTurns: 0
-            });
-        }
-        
-        this.gameStarted = true;
-        this.currentPlayerIndex = 0;
-        
-        this.closeModal();
         this.renderPlayerCards();
         this.updateCurrentPlayer();
         this.renderPlayerPieces();
         this.updateActionButtons();
+        this.updateGameDisplay();
+    }
+
+    isMyTurn() {
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        return currentPlayer && currentPlayer.id === this.playerId;
     }
 
     renderPlayerCards() {
         const container = document.getElementById('players-list');
         container.innerHTML = '';
         
-        this.players.forEach(player => {
+        this.players.forEach((player, index) => {
             const card = document.createElement('div');
             card.className = 'player-card';
-            card.id = `player-card-${player.id}`;
+            card.id = `player-card-${index}`;
             
             card.innerHTML = `
                 <div class="player-name">${player.name}</div>
                 <div class="player-money">$${player.money}</div>
-                <div class="player-piece piece-${player.id}"></div>
+                <div class="player-piece piece-${index}"></div>
+                ${!player.connected ? '<div class="disconnected-indicator">Disconnected</div>' : ''}
             `;
             
             container.appendChild(card);
@@ -150,275 +265,69 @@ class MonopolyGame {
     }
 
     updateCurrentPlayer() {
-        document.getElementById('player-name').textContent = this.players[this.currentPlayerIndex].name;
-        
-        // Update active player card
-        document.querySelectorAll('.player-card').forEach(card => {
-            card.classList.remove('active');
-        });
-        document.getElementById(`player-card-${this.currentPlayerIndex}`).classList.add('active');
+        if (this.players.length > 0) {
+            const currentPlayer = this.players[this.currentPlayerIndex];
+            document.getElementById('player-name').textContent = currentPlayer.name;
+            
+            // Update active player card
+            document.querySelectorAll('.player-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.getElementById(`player-card-${this.currentPlayerIndex}`).classList.add('active');
+        }
     }
 
     renderPlayerPieces() {
         // Remove all existing player pieces
         document.querySelectorAll('.player-on-space').forEach(piece => piece.remove());
         
-        this.players.forEach(player => {
+        this.players.forEach((player, index) => {
             const space = document.getElementById(`space-${player.position}`);
-            const piece = document.createElement('div');
-            piece.className = `player-on-space piece-${player.id}`;
-            space.appendChild(piece);
+            if (space) {
+                const piece = document.createElement('div');
+                piece.className = `player-on-space piece-${index}`;
+                space.appendChild(piece);
+            }
         });
-    }
-
-    rollDice() {
-        const dice1 = Math.floor(Math.random() * 6) + 1;
-        const dice2 = Math.floor(Math.random() * 6) + 1;
-        
-        this.lastDiceRoll = [dice1, dice2];
-        this.diceRolled = true;
-        
-        // Animate dice
-        const dice1El = document.getElementById('dice1');
-        const dice2El = document.getElementById('dice2');
-        
-        dice1El.classList.add('rolling');
-        dice2El.classList.add('rolling');
-        
-        setTimeout(() => {
-            dice1El.textContent = dice1;
-            dice2El.textContent = dice2;
-            dice1El.classList.remove('rolling');
-            dice2El.classList.remove('rolling');
-            
-            this.movePlayer(dice1 + dice2);
-        }, 500);
-        
-        document.getElementById('roll-dice').disabled = true;
-    }
-
-    movePlayer(spaces) {
-        const player = this.players[this.currentPlayerIndex];
-        const oldPosition = player.position;
-        
-        player.position = (player.position + spaces) % 40;
-        
-        // Check if player passed GO
-        if (player.position < oldPosition) {
-            player.money += 200;
-            this.showMessage(`${player.name} passed GO and collected $200!`);
-        }
-        
-        this.renderPlayerPieces();
-        this.updatePlayerDisplay();
-        this.handleLandedSpace();
-    }
-
-    handleLandedSpace() {
-        const player = this.players[this.currentPlayerIndex];
-        const space = this.boardSpaces[player.position];
-        
-        let message = `${player.name} landed on ${space.name}`;
-        
-        switch (space.type) {
-            case 'property':
-            case 'railroad':
-            case 'utility':
-                if (space.owner === null) {
-                    message += `\nWould you like to buy ${space.name} for $${space.price}?`;
-                    this.showPropertyOptions(space);
-                } else if (space.owner !== player.id) {
-                    const rent = this.calculateRent(space);
-                    message += `\nYou owe $${rent} rent to ${this.players[space.owner].name}`;
-                    this.showRentOptions(space, rent);
-                } else {
-                    message += `\nYou own this property.`;
-                }
-                break;
-            case 'tax':
-                message += `\nPay $${space.price} in taxes.`;
-                this.payTax(space.price);
-                break;
-            case 'chance':
-                message += `\nDraw a card!`;
-                this.handleChanceCard();
-                break;
-            case 'corner':
-                this.handleCornerSpace(space);
-                break;
-        }
-        
-        this.showMessage(message);
-        this.updateActionButtons();
-    }
-
-    calculateRent(space) {
-        if (space.type === 'railroad') {
-            const railroadsOwned = this.boardSpaces.filter(s => 
-                s.type === 'railroad' && s.owner === space.owner
-            ).length;
-            return 25 * Math.pow(2, railroadsOwned - 1);
-        } else if (space.type === 'utility') {
-            const utilitiesOwned = this.boardSpaces.filter(s => 
-                s.type === 'utility' && s.owner === space.owner
-            ).length;
-            const multiplier = utilitiesOwned === 1 ? 4 : 10;
-            return multiplier * (this.lastDiceRoll[0] + this.lastDiceRoll[1]);
-        } else {
-            return space.rent;
-        }
-    }
-
-    showPropertyOptions(space) {
-        document.getElementById('buy-property').disabled = false;
-        document.getElementById('buy-property').onclick = () => this.buyProperty(space);
-    }
-
-    showRentOptions(space, rent) {
-        document.getElementById('pay-rent').disabled = false;
-        document.getElementById('pay-rent').onclick = () => this.payRent(space, rent);
-    }
-
-    buyProperty(space = null) {
-        if (!space) {
-            const player = this.players[this.currentPlayerIndex];
-            space = this.boardSpaces[player.position];
-        }
-        
-        const player = this.players[this.currentPlayerIndex];
-        
-        if (player.money >= space.price) {
-            player.money -= space.price;
-            player.properties.push(space.name);
-            space.owner = player.id;
-            
-            // Add visual ownership indicator
-            const spaceElement = document.getElementById(`space-${player.position}`);
-            spaceElement.classList.add(`owned-${player.id}`);
-            
-            this.showMessage(`${player.name} bought ${space.name} for $${space.price}!`);
-            this.updatePlayerDisplay();
-        } else {
-            this.showMessage(`${player.name} doesn't have enough money to buy ${space.name}.`);
-        }
-        
-        document.getElementById('buy-property').disabled = true;
-        this.updateActionButtons();
-    }
-
-    payRent(space = null, rent = null) {
-        if (!space) {
-            const player = this.players[this.currentPlayerIndex];
-            space = this.boardSpaces[player.position];
-            rent = this.calculateRent(space);
-        }
-        
-        const player = this.players[this.currentPlayerIndex];
-        const owner = this.players[space.owner];
-        
-        if (player.money >= rent) {
-            player.money -= rent;
-            owner.money += rent;
-            
-            this.showMessage(`${player.name} paid $${rent} rent to ${owner.name}.`);
-        } else {
-            this.showMessage(`${player.name} doesn't have enough money! (Game would normally end here)`);
-        }
-        
-        this.updatePlayerDisplay();
-        document.getElementById('pay-rent').disabled = true;
-        this.updateActionButtons();
-    }
-
-    payTax(amount) {
-        const player = this.players[this.currentPlayerIndex];
-        player.money -= amount;
-        this.updatePlayerDisplay();
-    }
-
-    handleChanceCard() {
-        const cards = [
-            "Advance to GO (Collect $200)",
-            "Bank pays you dividend of $50",
-            "Go back 3 spaces",
-            "Pay poor tax of $15",
-            "Take a trip to Reading Railroad",
-            "Pay school fees of $150"
-        ];
-        
-        const card = cards[Math.floor(Math.random() * cards.length)];
-        this.showMessage(`Chance: ${card}`);
-        
-        // Simplified card effects
-        const player = this.players[this.currentPlayerIndex];
-        switch (card) {
-            case "Advance to GO (Collect $200)":
-                player.position = 0;
-                player.money += 200;
-                break;
-            case "Bank pays you dividend of $50":
-                player.money += 50;
-                break;
-            case "Go back 3 spaces":
-                player.position = Math.max(0, player.position - 3);
-                break;
-            case "Pay poor tax of $15":
-                player.money -= 15;
-                break;
-            case "Pay school fees of $150":
-                player.money -= 150;
-                break;
-        }
-        
-        this.renderPlayerPieces();
-        this.updatePlayerDisplay();
-    }
-
-    handleCornerSpace(space) {
-        const player = this.players[this.currentPlayerIndex];
-        
-        switch (space.name) {
-            case "GO":
-                player.money += 200;
-                this.showMessage(`${player.name} is on GO and collected $200!`);
-                break;
-            case "Go To Jail":
-                player.position = 10; // Jail position
-                player.inJail = true;
-                this.showMessage(`${player.name} goes to jail!`);
-                break;
-        }
-        
-        this.updatePlayerDisplay();
-    }
-
-    endTurn() {
-        this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
-        this.diceRolled = false;
-        
-        this.updateCurrentPlayer();
-        this.updateActionButtons();
-        
-        document.getElementById('roll-dice').disabled = false;
-        document.getElementById('buy-property').disabled = true;
-        document.getElementById('pay-rent').disabled = true;
     }
 
     updateActionButtons() {
         const diceButton = document.getElementById('roll-dice');
         const endTurnButton = document.getElementById('end-turn');
+        const buyPropertyButton = document.getElementById('buy-property');
+        const payRentButton = document.getElementById('pay-rent');
         
-        diceButton.disabled = this.diceRolled;
-        endTurnButton.disabled = !this.diceRolled;
+        const isMyTurn = this.isMyTurn();
+        
+        diceButton.disabled = !isMyTurn || this.diceRolled;
+        endTurnButton.disabled = !isMyTurn || !this.diceRolled;
+        buyPropertyButton.disabled = true;
+        payRentButton.disabled = true;
+        
+        if (isMyTurn && this.diceRolled) {
+            const currentPlayer = this.players.find(p => p.id === this.playerId);
+            if (currentPlayer) {
+                const space = this.boardSpaces[currentPlayer.position];
+                if (space && space.type === 'property' && space.owner === null && currentPlayer.money >= space.price) {
+                    buyPropertyButton.disabled = false;
+                }
+            }
+        }
     }
 
-    updatePlayerDisplay() {
-        this.players.forEach(player => {
-            const moneyElement = document.querySelector(`#player-card-${player.id} .player-money`);
-            if (moneyElement) {
-                moneyElement.textContent = `$${player.money}`;
-            }
-        });
+    updateGameDisplay() {
+        this.renderPlayerCards();
+        this.updateCurrentPlayer();
+        this.renderPlayerPieces();
+        this.updateActionButtons();
+        this.updateDiceDisplay();
+    }
+
+    updateDiceDisplay() {
+        if (this.lastDiceRoll) {
+            document.getElementById('dice1').textContent = this.lastDiceRoll[0];
+            document.getElementById('dice2').textContent = this.lastDiceRoll[1];
+        }
     }
 
     showMessage(message) {
@@ -435,46 +344,7 @@ class MonopolyGame {
     }
 
     closeModal() {
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.classList.remove('active');
-        });
-    }
-
-    // Save/Load game state for mobile compatibility
-    saveGame() {
-        const gameState = {
-            players: this.players,
-            currentPlayerIndex: this.currentPlayerIndex,
-            gameStarted: this.gameStarted,
-            boardSpaces: this.boardSpaces,
-            lastDiceRoll: this.lastDiceRoll,
-            diceRolled: this.diceRolled
-        };
-        
-        localStorage.setItem('monopoly-game', JSON.stringify(gameState));
-    }
-
-    loadGame() {
-        const savedGame = localStorage.getItem('monopoly-game');
-        if (savedGame) {
-            const gameState = JSON.parse(savedGame);
-            
-            this.players = gameState.players;
-            this.currentPlayerIndex = gameState.currentPlayerIndex;
-            this.gameStarted = gameState.gameStarted;
-            this.boardSpaces = gameState.boardSpaces;
-            this.lastDiceRoll = gameState.lastDiceRoll;
-            this.diceRolled = gameState.diceRolled;
-            
-            if (this.gameStarted) {
-                this.closeModal();
-                this.renderPlayerCards();
-                this.updateCurrentPlayer();
-                this.renderPlayerPieces();
-                this.updateActionButtons();
-                this.updatePlayerDisplay();
-            }
-        }
+        document.getElementById('game-modal').classList.remove('active');
     }
 }
 
@@ -482,35 +352,5 @@ class MonopolyGame {
 let game;
 
 document.addEventListener('DOMContentLoaded', () => {
-    game = new MonopolyGame();
-    
-    // Try to load saved game
-    game.loadGame();
-    
-    // Auto-save game state periodically
-    setInterval(() => {
-        if (game.gameStarted) {
-            game.saveGame();
-        }
-    }, 10000); // Save every 10 seconds
-    
-    // Save game when page is closed
-    window.addEventListener('beforeunload', () => {
-        if (game.gameStarted) {
-            game.saveGame();
-        }
-    });
+    game = new MultiplayerMonopolyGame();
 });
-
-// Service Worker registration for PWA functionality
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('SW registered: ', registration);
-            })
-            .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
