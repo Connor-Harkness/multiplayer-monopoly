@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly - Pass & Play</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2d4a32">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>Monopoly - Pass & Play</h1>
+            <div id="current-player">Current Player: <span id="player-name">Player 1</span></div>
+        </header>
+
+        <main>
+            <div id="game-board">
+                <!-- Corner spaces -->
+                <div class="space corner" id="space-0" data-position="0">
+                    <div class="space-name">GO</div>
+                    <div class="space-info">Collect $200</div>
+                </div>
+                
+                <!-- Bottom row -->
+                <div class="space property" id="space-1" data-position="1">
+                    <div class="color-bar brown"></div>
+                    <div class="space-name">Mediterranean Ave</div>
+                    <div class="space-price">$60</div>
+                </div>
+                <div class="space chance" id="space-2" data-position="2">
+                    <div class="space-name">Community Chest</div>
+                </div>
+                <div class="space property" id="space-3" data-position="3">
+                    <div class="color-bar brown"></div>
+                    <div class="space-name">Baltic Ave</div>
+                    <div class="space-price">$60</div>
+                </div>
+                <div class="space tax" id="space-4" data-position="4">
+                    <div class="space-name">Income Tax</div>
+                    <div class="space-price">$200</div>
+                </div>
+                <div class="space railroad" id="space-5" data-position="5">
+                    <div class="space-name">Reading Railroad</div>
+                    <div class="space-price">$200</div>
+                </div>
+                <div class="space property" id="space-6" data-position="6">
+                    <div class="color-bar light-blue"></div>
+                    <div class="space-name">Oriental Ave</div>
+                    <div class="space-price">$100</div>
+                </div>
+                <div class="space chance" id="space-7" data-position="7">
+                    <div class="space-name">Chance</div>
+                </div>
+                <div class="space property" id="space-8" data-position="8">
+                    <div class="color-bar light-blue"></div>
+                    <div class="space-name">Vermont Ave</div>
+                    <div class="space-price">$100</div>
+                </div>
+                <div class="space property" id="space-9" data-position="9">
+                    <div class="color-bar light-blue"></div>
+                    <div class="space-name">Connecticut Ave</div>
+                    <div class="space-price">$120</div>
+                </div>
+
+                <!-- Right corner -->
+                <div class="space corner" id="space-10" data-position="10">
+                    <div class="space-name">Jail</div>
+                    <div class="space-info">Just Visiting</div>
+                </div>
+
+                <!-- Right side (spaces 11-19) -->
+                <div class="space property" id="space-11" data-position="11">
+                    <div class="color-bar pink"></div>
+                    <div class="space-name">St. Charles Place</div>
+                    <div class="space-price">$140</div>
+                </div>
+                <div class="space utility" id="space-12" data-position="12">
+                    <div class="space-name">Electric Company</div>
+                    <div class="space-price">$150</div>
+                </div>
+                <div class="space property" id="space-13" data-position="13">
+                    <div class="color-bar pink"></div>
+                    <div class="space-name">States Ave</div>
+                    <div class="space-price">$140</div>
+                </div>
+                <div class="space property" id="space-14" data-position="14">
+                    <div class="color-bar pink"></div>
+                    <div class="space-name">Virginia Ave</div>
+                    <div class="space-price">$160</div>
+                </div>
+                <div class="space railroad" id="space-15" data-position="15">
+                    <div class="space-name">Pennsylvania Railroad</div>
+                    <div class="space-price">$200</div>
+                </div>
+                <div class="space property" id="space-16" data-position="16">
+                    <div class="color-bar orange"></div>
+                    <div class="space-name">St. James Place</div>
+                    <div class="space-price">$180</div>
+                </div>
+                <div class="space chance" id="space-17" data-position="17">
+                    <div class="space-name">Community Chest</div>
+                </div>
+                <div class="space property" id="space-18" data-position="18">
+                    <div class="color-bar orange"></div>
+                    <div class="space-name">Tennessee Ave</div>
+                    <div class="space-price">$180</div>
+                </div>
+                <div class="space property" id="space-19" data-position="19">
+                    <div class="color-bar orange"></div>
+                    <div class="space-name">New York Ave</div>
+                    <div class="space-price">$200</div>
+                </div>
+
+                <!-- Top corner -->
+                <div class="space corner" id="space-20" data-position="20">
+                    <div class="space-name">Free Parking</div>
+                </div>
+
+                <!-- Top side (spaces 21-29) -->
+                <div class="space property" id="space-21" data-position="21">
+                    <div class="color-bar red"></div>
+                    <div class="space-name">Kentucky Ave</div>
+                    <div class="space-price">$220</div>
+                </div>
+                <div class="space chance" id="space-22" data-position="22">
+                    <div class="space-name">Chance</div>
+                </div>
+                <div class="space property" id="space-23" data-position="23">
+                    <div class="color-bar red"></div>
+                    <div class="space-name">Indiana Ave</div>
+                    <div class="space-price">$220</div>
+                </div>
+                <div class="space property" id="space-24" data-position="24">
+                    <div class="color-bar red"></div>
+                    <div class="space-name">Illinois Ave</div>
+                    <div class="space-price">$240</div>
+                </div>
+                <div class="space railroad" id="space-25" data-position="25">
+                    <div class="space-name">B. & O. Railroad</div>
+                    <div class="space-price">$200</div>
+                </div>
+                <div class="space property" id="space-26" data-position="26">
+                    <div class="color-bar yellow"></div>
+                    <div class="space-name">Atlantic Ave</div>
+                    <div class="space-price">$260</div>
+                </div>
+                <div class="space property" id="space-27" data-position="27">
+                    <div class="color-bar yellow"></div>
+                    <div class="space-name">Ventnor Ave</div>
+                    <div class="space-price">$260</div>
+                </div>
+                <div class="space utility" id="space-28" data-position="28">
+                    <div class="space-name">Water Works</div>
+                    <div class="space-price">$150</div>
+                </div>
+                <div class="space property" id="space-29" data-position="29">
+                    <div class="color-bar yellow"></div>
+                    <div class="space-name">Marvin Gardens</div>
+                    <div class="space-price">$280</div>
+                </div>
+
+                <!-- Left corner -->
+                <div class="space corner" id="space-30" data-position="30">
+                    <div class="space-name">Go To Jail</div>
+                </div>
+
+                <!-- Left side (spaces 31-39) -->
+                <div class="space property" id="space-31" data-position="31">
+                    <div class="color-bar green"></div>
+                    <div class="space-name">Pacific Ave</div>
+                    <div class="space-price">$300</div>
+                </div>
+                <div class="space property" id="space-32" data-position="32">
+                    <div class="color-bar green"></div>
+                    <div class="space-name">North Carolina Ave</div>
+                    <div class="space-price">$300</div>
+                </div>
+                <div class="space chance" id="space-33" data-position="33">
+                    <div class="space-name">Community Chest</div>
+                </div>
+                <div class="space property" id="space-34" data-position="34">
+                    <div class="color-bar green"></div>
+                    <div class="space-name">Pennsylvania Ave</div>
+                    <div class="space-price">$320</div>
+                </div>
+                <div class="space railroad" id="space-35" data-position="35">
+                    <div class="color-bar"></div>
+                    <div class="space-name">Short Line</div>
+                    <div class="space-price">$200</div>
+                </div>
+                <div class="space chance" id="space-36" data-position="36">
+                    <div class="space-name">Chance</div>
+                </div>
+                <div class="space property" id="space-37" data-position="37">
+                    <div class="color-bar blue"></div>
+                    <div class="space-name">Park Place</div>
+                    <div class="space-price">$350</div>
+                </div>
+                <div class="space tax" id="space-38" data-position="38">
+                    <div class="space-name">Luxury Tax</div>
+                    <div class="space-price">$100</div>
+                </div>
+                <div class="space property" id="space-39" data-position="39">
+                    <div class="color-bar blue"></div>
+                    <div class="space-name">Boardwalk</div>
+                    <div class="space-price">$400</div>
+                </div>
+
+                <!-- Center area -->
+                <div id="center-area">
+                    <div id="dice-area">
+                        <div id="dice-container">
+                            <div class="dice" id="dice1">1</div>
+                            <div class="dice" id="dice2">1</div>
+                        </div>
+                        <button id="roll-dice">Roll Dice</button>
+                    </div>
+                    
+                    <div id="game-logo">
+                        <h2>MONOPOLY</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div id="game-controls">
+                <div id="player-info">
+                    <div id="players-list">
+                        <!-- Player cards will be generated here -->
+                    </div>
+                </div>
+                
+                <div id="action-buttons">
+                    <button id="end-turn" disabled>End Turn</button>
+                    <button id="buy-property" disabled>Buy Property</button>
+                    <button id="pay-rent" disabled>Pay Rent</button>
+                </div>
+            </div>
+        </main>
+
+        <div id="game-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modal-body">
+                    <!-- Modal content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Modal -->
+    <div id="setup-modal" class="modal active">
+        <div class="modal-content">
+            <h2>Game Setup</h2>
+            <div id="setup-form">
+                <label for="num-players">Number of Players (2-4):</label>
+                <input type="number" id="num-players" min="2" max="4" value="2">
+                
+                <div id="player-names">
+                    <div class="player-name-input">
+                        <label>Player 1 Name:</label>
+                        <input type="text" value="Player 1" maxlength="15">
+                    </div>
+                    <div class="player-name-input">
+                        <label>Player 2 Name:</label>
+                        <input type="text" value="Player 2" maxlength="15">
+                    </div>
+                </div>
+                
+                <button id="start-game">Start Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
