@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monopoly - Pass & Play</title>
+    <title>Monopoly - Multiplayer</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2d4a32">
@@ -11,8 +11,9 @@
 <body>
     <div id="game-container">
         <header>
-            <h1>Monopoly - Pass & Play</h1>
-            <div id="current-player">Current Player: <span id="player-name">Player 1</span></div>
+            <h1>Monopoly - Multiplayer</h1>
+            <div id="connection-status">Connecting...</div>
+            <div id="current-player" style="display: none;">Current Player: <span id="player-name">Player 1</span></div>
         </header>
 
         <main>
@@ -249,8 +250,50 @@
         </div>
     </div>
 
-    <!-- Setup Modal -->
-    <div id="setup-modal" class="modal active">
+    <!-- Lobby Modal -->
+    <div id="lobby-modal" class="modal active">
+        <div class="modal-content">
+            <h2>Multiplayer Lobby</h2>
+            <div id="lobby-content">
+                <div id="player-setup">
+                    <label for="player-name-input">Your Name:</label>
+                    <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="15">
+                </div>
+                
+                <div id="lobby-options">
+                    <button id="create-game-btn" class="lobby-btn">Create New Game</button>
+                    <button id="join-game-btn" class="lobby-btn">Join Game</button>
+                    <button id="refresh-games-btn" class="lobby-btn">Refresh Games</button>
+                </div>
+                
+                <div id="join-game-section" style="display: none;">
+                    <h3>Available Games</h3>
+                    <div id="games-list">
+                        <!-- Available games will be listed here -->
+                    </div>
+                    <div id="manual-join">
+                        <label for="room-code-input">Or enter room code:</label>
+                        <input type="text" id="room-code-input" placeholder="Room Code" maxlength="8">
+                        <button id="join-by-code-btn">Join</button>
+                    </div>
+                </div>
+                
+                <div id="game-room-section" style="display: none;">
+                    <h3>Game Room: <span id="room-code"></span></h3>
+                    <div id="room-players">
+                        <!-- Players in room will be listed here -->
+                    </div>
+                    <div id="room-controls">
+                        <button id="start-game-btn" style="display: none;">Start Game</button>
+                        <button id="leave-room-btn">Leave Room</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Modal (hidden in multiplayer) -->
+    <div id="setup-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h2>Game Setup</h2>
             <div id="setup-form">
@@ -273,6 +316,7 @@
         </div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
